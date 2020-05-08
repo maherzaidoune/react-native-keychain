@@ -137,13 +137,7 @@ public class KeychainModule extends ReactContextBaseJavaModule {
     super(reactContext);
     prefsStorage = new PrefsStorage(reactContext);
 
-    addCipherStorageToMap(new CipherStorageFacebookConceal(reactContext));
     addCipherStorageToMap(new CipherStorageKeystoreAesCbc());
-
-    // we have a references to newer api that will fail load of app classes in old androids OS
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-      addCipherStorageToMap(new CipherStorageKeystoreRsaEcb());
-    }
   }
 
   /** Allow initialization in chain. */
@@ -161,19 +155,8 @@ public class KeychainModule extends ReactContextBaseJavaModule {
   /** cipher (crypto api) warming up logic. force java load classes and intializations. */
   private void internalWarmingBestCipher() {
     try {
-      final long startTime = System.nanoTime();
-
-      Log.v(KEYCHAIN_MODULE, "warming up started at " + startTime);
       final CipherStorageBase best = (CipherStorageBase) getCipherStorageForCurrentAPILevel();
       final Cipher instance = best.getCachedInstance();
-      final boolean isSecure = best.supportsSecureHardware();
-      final SecurityLevel requiredLevel = isSecure ? SecurityLevel.SECURE_HARDWARE : SecurityLevel.SECURE_SOFTWARE;
-      best.generateKeyAndStoreUnderAlias("warmingUp", requiredLevel);
-      best.getKeyStoreAndLoad();
-
-      Log.v(KEYCHAIN_MODULE, "warming up takes: " +
-        TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime) +
-        " ms");
     } catch (Throwable ex) {
       Log.e(KEYCHAIN_MODULE, "warming up failed!", ex);
     }
